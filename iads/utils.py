@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import random
+from sklearn.utils import shuffle
 
 # ------------------------ 
 
@@ -52,42 +53,44 @@ def genere_dataset_gaussian(positive_center, positive_sigma, negative_center, ne
     return (data_desc, data_labels)
     
 def genere_train_test(desc_set, label_set, n_pos, n_neg):
-    """ permet de générer une base d'apprentissage et une base de test
-        desc_set: ndarray avec des descriptions
-        label_set: ndarray avec les labels correspondants
-        n_pos: nombre d'exemples de label +1 à mettre dans la base d'apprentissage
-        n_neg: nombre d'exemples de label -1 à mettre dans la base d'apprentissage
-        Hypothèses: 
-           - desc_set et label_set ont le même nombre de lignes)
-           - n_pos et n_neg, ainsi que leur somme, sont inférieurs à n (le nombre d'exemples dans desc_set)
-    """
-    #tableau avec les exemples ayant pour label -1
-    tab_neg = desc_set[label_set == -1]
-    train_indices_neg = random.sample([i for i in range(len(tab_neg))], n_neg)  #tableau d'indice alea
-    X_train_neg = [tab_neg[i] for i in train_indices_neg]
-    
-    tab_pos = desc_set[label_set == +1]
-    train_indices_pos = random.sample([i for i in range (len(tab_pos))], n_pos)
-    X_train_pos = [tab_pos[i] for i in train_indices_pos]
-    
-    X_train = np.vstack((X_train_neg, X_train_pos))
-    Y_train = [-1 for i in range(n_neg)] + [+1 for i in range(n_pos)]
-    
-    
-    
-    I_neg = [i for i in range(len(tab_neg))]
-    test_indices_neg = np.setdiff1d(I_neg, train_indices_neg)
-    X_test_neg = [tab_neg[i] for i in test_indices_neg]
-    
-    I_pos = [i for i in range(len(tab_pos))]
-    test_indices_pos = np.setdiff1d(I_pos, train_indices_pos)
-    X_test_pos = [tab_pos[i] for i in test_indices_pos]
-    
-    X_test = np.vstack((X_test_neg, X_test_pos))
-    Y_test = [-1 for i in range(len(test_indices_neg))] + [+1 for i in range(len(test_indices_pos))]
-    
-    
-    return (X_train, Y_train),(X_test, Y_test)
+	""" permet de générer une base d'apprentissage et une base de test
+	desc_set: ndarray avec des descriptions
+	label_set: ndarray avec les labels correspondants
+	n_pos: nombre d'exemples de label +1 à mettre dans la base d'apprentissage
+	n_neg: nombre d'exemples de label -1 à mettre dans la base d'apprentissage
+	Hypothèses:
+	- desc_set et label_set ont le même nombre de lignes)
+	- n_pos et n_neg, ainsi que leur somme, sont inférieurs à n (le nombre d'exemples dans desc_set)
+	"""
+
+	# On commence par mélanger les données:
+	desc_set, label_set = shuffle(desc_set, label_set)
+
+	# On récupère les indices des exemples de classe -1:
+	indices_negatifs = np.where(label_set == -1)[0]
+	# On récupère les indices des exemples de classe +1:
+	indices_positifs = np.where(label_set == +1)[0]
+
+	# On tire aléatoirement n_pos indices parmi les indices des exemples de classe +1:
+	indices_positifs_train = random.sample(list(indices_positifs), n_pos)
+	# On tire aléatoirement n_neg indices parmi les indices des exemples de classe -1:
+	indices_negatifs_train = random.sample(list(indices_negatifs), n_neg)
+
+	# On récupère les indices des exemples de classe -1 qui ne sont pas dans la base d'apprentissage:
+	indices_negatifs_test = list(set(indices_negatifs) - set(indices_negatifs_train))
+	# On récupère les indices des exemples de classe +1 qui ne sont pas dans la base d'apprentissage:
+	indices_positifs_test = list(set(indices_positifs) - set(indices_positifs_train))
+
+	# On récupère les exemples de la base d'apprentissage:
+	desc_train = np.concatenate((desc_set[indices_negatifs_train], desc_set[indices_positifs_train]))
+	label_train = np.concatenate((label_set[indices_negatifs_train], label_set[indices_positifs_train]))
+
+	# On récupère les exemples de la base de test:
+	desc_test = np.concatenate((desc_set[indices_negatifs_test], desc_set[indices_positifs_test]))
+	label_test = np.concatenate((label_set[indices_negatifs_test], label_set[indices_positifs_test]))
+
+	return (desc_train, label_train), (desc_test, label_test)
+
 
 # plot2DSet:
 def plot2DSet(desc,labels):    
