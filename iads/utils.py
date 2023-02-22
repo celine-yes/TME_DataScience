@@ -14,6 +14,7 @@ Année: LU3IN026 - semestre 2 - 2022-2023, Sorbonne Université
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import random
 
 # ------------------------ 
 
@@ -49,6 +50,44 @@ def genere_dataset_gaussian(positive_center, positive_sigma, negative_center, ne
     data_labels = np.hstack((data_labels_n, data_labels_p))
 
     return (data_desc, data_labels)
+    
+def genere_train_test(desc_set, label_set, n_pos, n_neg):
+    """ permet de générer une base d'apprentissage et une base de test
+        desc_set: ndarray avec des descriptions
+        label_set: ndarray avec les labels correspondants
+        n_pos: nombre d'exemples de label +1 à mettre dans la base d'apprentissage
+        n_neg: nombre d'exemples de label -1 à mettre dans la base d'apprentissage
+        Hypothèses: 
+           - desc_set et label_set ont le même nombre de lignes)
+           - n_pos et n_neg, ainsi que leur somme, sont inférieurs à n (le nombre d'exemples dans desc_set)
+    """
+    #tableau avec les exemples ayant pour label -1
+    tab_neg = desc_set[label_set == -1]
+    train_indices_neg = random.sample([i for i in range(len(tab_neg))], n_neg)  #tableau d'indice alea
+    X_train_neg = [tab_neg[i] for i in train_indices_neg]
+    
+    tab_pos = desc_set[label_set == +1]
+    train_indices_pos = random.sample([i for i in range (len(tab_pos))], n_pos)
+    X_train_pos = [tab_pos[i] for i in train_indices_pos]
+    
+    X_train = np.vstack((X_train_neg, X_train_pos))
+    Y_train = [-1 for i in range(n_neg)] + [+1 for i in range(n_pos)]
+    
+    
+    
+    I_neg = [i for i in range(len(tab_neg))]
+    test_indices_neg = np.setdiff1d(I_neg, train_indices_neg)
+    X_test_neg = [tab_neg[i] for i in test_indices_neg]
+    
+    I_pos = [i for i in range(len(tab_pos))]
+    test_indices_pos = np.setdiff1d(I_pos, train_indices_pos)
+    X_test_pos = [tab_pos[i] for i in test_indices_pos]
+    
+    X_test = np.vstack((X_test_neg, X_test_pos))
+    Y_test = [-1 for i in range(len(test_indices_neg))] + [+1 for i in range(len(test_indices_pos))]
+    
+    
+    return (X_train, Y_train),(X_test, Y_test)
 
 # plot2DSet:
 def plot2DSet(desc,labels):    
@@ -85,4 +124,42 @@ def plot_frontiere(desc_set, label_set, classifier, step=30):
     plt.contourf(x1grid,x2grid,res,colors=["darksalmon","skyblue"],levels=[-1000,0,1000])
 
 
-
+def crossval_strat(X, Y, n_iterations, iteration):
+        # Séparation par classe
+    Xp = {}
+    Yp = {}
+    for i in range(len(X)):
+        if Y[i] not in Xp:
+            Xp[Y[i]] = []
+            Yp[Y[i]] = []
+        Xp[Y[i]].append(X[i])
+        Yp[Y[i]].append(Y[i])
+    
+    # Calculer le nombre d'exemples pour chaque ensemble de test
+    n_test = {}
+    for k, v in Xp.items():
+        n_test[k] = int(len(v) / n_iterations)
+    
+    # Extraire les exemples pour l'ensemble de test courant
+    Xtest = []
+    Ytest = []
+    for k, v in Xp.items():
+        start = iteration * n_test[k]
+        end = start + n_test[k]
+        Xtest += v[start:end]
+        Ytest += Yp[k][start:end]
+        
+    # Extraire les exemples pour l'ensemble d'apprentissage
+    Xapp = []
+    Yapp = []
+    for k, v in Xp.items():
+        Xapp += v[:iteration*n_test[k]] + v[(iteration+1)*n_test[k]:]
+        Yapp += Yp[k][:iteration*n_test[k]] + Yp[k][(iteration+1)*n_test[k]:]
+    
+    # Convertir en numpy arrays
+    Xapp = np.array(Xapp)
+    Yapp = np.array(Yapp)
+    Xtest = np.array(Xtest)
+    Ytest = np.array(Ytest)
+   
+    return Xapp, Yapp, Xtest, Ytest
