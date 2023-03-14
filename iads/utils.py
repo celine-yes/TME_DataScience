@@ -126,6 +126,19 @@ def plot_frontiere(desc_set, label_set, classifier, step=30):
     # colors[0] est la couleur des -1 et colors[1] est la couleur des +1
     plt.contourf(x1grid,x2grid,res,colors=["darksalmon","skyblue"],levels=[-1000,0,1000])
 
+def crossval(X, Y, n_iterations, iteration):
+
+    taille_test = len(X) // n_iterations
+    i_test = slice(iteration * taille_test, (iteration + 1) * taille_test)
+    i_train = np.concatenate([np.arange(0, iteration * taille_test),
+                                np.arange((iteration + 1) * taille_test, len(X))])
+    Xtest = X[i_test]
+    Ytest = Y[i_test]
+    Xapp = X[i_train]
+    Yapp = Y[i_train]
+    
+    return Xapp, Yapp, Xtest, Ytest
+
 
 def crossval_strat(X, Y, n_iterations, iteration):
         # Séparation par classe
