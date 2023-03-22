@@ -15,6 +15,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import random
+import copy
+import math
+
 from sklearn.utils import shuffle
 
 # ------------------------ 
@@ -179,3 +182,5 @@ def crossval_strat(X, Y, n_iterations, iteration):
     Ytest = np.array(Ytest)
    
     return Xapp, Yapp, Xtest, Ytest
+    
+
