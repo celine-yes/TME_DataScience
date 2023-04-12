@@ -264,3 +264,110 @@ def CHA(DF,linkage='centroid', verbose=False,dendrogramme=False):
         return clustering_hierarchique_simple(DF, verbose, dendrogramme)
     if linkage == 'average':
         return clustering_hierarchique_average(DF, verbose, dendrogramme)
+
+
+def inertie_cluster(Ens):
+    distances = np.sqrt(np.sum((Ens-centroide(Ens))**2))
+    return  np.sum(distances ** 2)
+
+
+
+def init_kmeans(K,Ens):
+    # Tire aléatoirement K indices uniques entre 0 et le nombre d'exemples de la base d'apprentissage
+    indices = np.random.choice(len(Ens), K, replace=False)
+    
+    # Sélectionne les exemples correspondants aux indices tirés aléatoirement
+    exemples = Ens.iloc[indices].values
+    
+    return exemples
+
+
+def plus_proche(Exe,Centres):
+    
+    # Convertie l'exemple en un np.array si c'est un pandas.Series
+    if isinstance(Exe, pd.Series):
+        Exe = Exe.to_numpy()
+        
+    # Calcule la distance euclidienne entre l'exemple et chaque centre de cluster
+    distances = np.linalg.norm(Centres - Exe.reshape((1, -1)), axis=1)
+    
+    # Trouver l'indice du centroide le plus proche de l'exemple
+    res = np.argmin(distances)
+    
+    return res
+
+
+
+
+def affecte_cluster(Base,Centres):
+    # Initialiser le dictionnaire de la matrice d'affectation
+    mat_affectation = {k: [] for k in range(len(Centres))}
+    
+    Exe = Base.values
+    
+    for i in range(len(Exe)):
+        pproche = plus_proche(Exe[i], Centres)
+        mat_affectation[pproche].append(i)
+    
+    return mat_affectation
+
+
+
+def nouveaux_centroides(Base,U):
+    Centroides = np.zeros((len(U), Base.shape[1]))
+    for k in range(len(U)):
+        # Extraire les exemples affectés au cluster k
+        indices = U[k]
+        exemples_k = Base.iloc[indices]
+        
+        # Calculer la moyenne des exemples affectés au cluster k
+        Centroides[k] = np.mean(exemples_k, axis=0)
+    return Centroides
+
+
+def inertie_globale(Base, U):
+    
+    inertie_globale = 0
+    for k, indices in U.items():
+        # Extraire les exemples affectés au cluster k
+        exemples_k = Base.iloc[indices]
+        # Calculer l'inertie du cluster k
+        inertie_k = inertie_cluster(exemples_k)
+        # Ajouter l'inertie du cluster k à l'inertie globale
+        inertie_globale += inertie_k
+    return inertie_globale
+
+
+
+
+def kmoyennes(K, Base, epsilon, iter_max):
+    centres = init_kmeans(K, Base)
+    U = dict()
+    inertie_tmp = 0
+    
+    for i in range(iter_max):
+        U = affecte_cluster(Base, centres)
+        centres = nouveaux_centroides(Base, U)
+        inertie = inertie_globale(Base,U)
+        print("iteration " + str(i) + " Inertie : " + str(inertie) + " Difference: " + str(abs(inertie - inertie_tmp)))
+        if(abs(inertie - inertie_tmp) < epsilon ):
+            break
+        
+        inertie_tmp = inertie
+    
+    return (centres, U)
+
+
+# Librairie pour manipuler les colormaps:
+import matplotlib.cm as cm
+
+# on transforme le colormap en couleurs utilisable par plt.scatter:
+couleurs = cm.tab20(np.linspace(0, 1, 20))
+
+def affiche_resultat(Base,Centres,Affect):
+    for i in range(len(Affect)):
+        exemples = (Base.iloc[Affect[i]]).values.tolist()
+        for e in exemples:
+            plt.scatter(e[0],e[1],color=couleurs[i])
+      
+    plt.scatter(Centres[:,0],Centres[:,1],color='r',marker='x')
