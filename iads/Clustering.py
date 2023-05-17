@@ -357,6 +357,53 @@ def kmoyennes(K, Base, epsilon, iter_max):
     
     return (centres, U)
 
+def inter_cluster_distance(centers):
+    min_distance = np.inf
+    for i in range(len(centers)):
+        for j in range(i+1, len(centers)):
+            distance = np.linalg.norm(centers[i]-centers[j])
+            if distance < min_distance:
+                min_distance = distance
+    return min_distance
+
+def intra_cluster_distance(centers, u):
+    max_distance = 0
+    for k, indices in u.items():
+        center = centers[k]
+        for i in indices:
+            distance = np.linalg.norm(center-i)
+            if distance > max_distance:
+                max_distance = distance
+    return max_distance
+
+def dunn_index(centers, u):
+    return inter_cluster_distance(centers) / intra_cluster_distance(centers, u)
+
+
+def min_inter_cluster_distance(centers):
+    min_distance = np.inf
+    for i in range(len(centers)):
+        for j in range(i+1, len(centers)):
+            distance = np.linalg.norm(centers[i]-centers[j])
+            if distance < min_distance:
+                min_distance = distance
+    return min_distance
+
+def sum_squared_intra_cluster_distance(centers, u):
+    total_distance = 0
+    for k, indices in u.items():
+        center = centers[k]
+        for i in indices:
+            distance = np.linalg.norm(center-i)
+            total_distance += distance**2
+    return total_distance
+
+def xie_beni_index(centers, u):
+    num_clusters = len(centers)
+    numerator = sum_squared_intra_cluster_distance(centers, u)
+    denominator = num_clusters * min_inter_cluster_distance(centers)**2
+    return numerator / denominator
+
 
 # Librairie pour manipuler les colormaps:
 import matplotlib.cm as cm

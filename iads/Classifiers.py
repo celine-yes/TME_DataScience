@@ -246,11 +246,11 @@ class ClassifierPerceptronBiais(ClassifierPerceptron):
         
         
 # La librairie suivante est nécessaire pour l'affichage graphique de l'arbre:
-import graphviz as gv
+#import graphviz as gv
 
 # Eventuellement, il peut être nécessaire d'installer graphviz sur votre compte:
 # pip install --user --install-option="--prefix=" -U graphviz
-
+'''
 class NoeudCategoriel:
     """ Classe pour représenter des noeuds d'un arbre de décision
     """
@@ -386,7 +386,7 @@ class ClassifierArbreDecision(Classifier):
         """
         self.racine.to_graph(GTree)
         
-        
+'''  
 
     # ------------------------ (CORRECTION POUR ENSEIGNANT)
 def entropie(Y):
@@ -530,8 +530,8 @@ def leave_one_out(C, DS):
     
     
 
-import graphviz as gv
-
+#import graphviz as gv
+'''
 class NoeudNumerique:
     """ Classe pour représenter des noeuds numériques d'un arbre de décision
     """
@@ -760,3 +760,4 @@ class ClassifierArbreNumerique(Classifier):
         """
         self.racine.to_graph(GTree)
 # ---------------------------
+'''
